@@ -2,13 +2,12 @@ import ontouchpan from './ontouchpan'
 
 export default function(opts) {
   opts = Object.assign({
-    // https://bugs.chromium.org/p/chromium/issues/detail?id=766938
     scrollable: document.body,
     threshold: 150,
-    onStateChange() { /* noop */ }
+    onRefresh: () => {}
   }, opts)
 
-  const { container, scrollable, threshold, refresh, onStateChange, animates } = opts
+  const { container, scrollable, threshold, refresh, onRefresh, animates } = opts
 
   let distance, offset, state // state: pulling, aborting, reached, refreshing, restoring
 
@@ -42,7 +41,7 @@ export default function(opts) {
         offset = d
         state = 'pulling'
         addClass(state)
-        onStateChange(state, opts)
+        onRefresh(state, opts)
       }
 
       d = d - offset
@@ -53,7 +52,7 @@ export default function(opts) {
         removeClass(state)
         state = state === 'reached' ? 'pulling' : 'reached'
         addClass(state)
-        onStateChange(state, opts)
+        onRefresh(state, opts)
       }
 
       animates.pulling(d, opts)
@@ -65,30 +64,30 @@ export default function(opts) {
       if (state === 'pulling') {
         removeClass(state)
         state = 'aborting'
-        onStateChange(state)
+        onRefresh(state)
         addClass(state)
         animates.aborting(opts).then(() => {
           removeClass(state)
           distance = state = offset = null
-          onStateChange(state)
+          onRefresh(state)
         })
       } else if (state === 'reached') {
         removeClass(state)
         state = 'refreshing'
         addClass(state)
-        onStateChange(state, opts)
+        onRefresh(state, opts)
         animates.refreshing(opts)
 
         refresh().then(() => {
           removeClass(state)
           state = 'restoring'
           addClass(state)
-          onStateChange(state)
+          onRefresh(state)
 
           animates.restoring(opts).then(() => {
             removeClass(state)
             distance = state = offset = null
-            onStateChange(state)
+            onRefresh(state)
           })
         })
       }
